@@ -4,6 +4,11 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 
+class EntityType(Enum):
+    AGENT = "AGENT"
+    HUMAN = "HUMAN"
+    MACHINE = "MACHINE"
+
 class Performative(Enum):
     PROPOSE = "PROPOSE"
     ACCEPT = "ACCEPT"
@@ -27,6 +32,7 @@ class Role(Enum):
     MEDIATOR = "MEDIATOR"
     OBSERVER = "OBSERVER"
     ARBITER = "ARBITER"
+    EXECUTOR = "EXECUTOR" # Used for Machines
 
 class SessionState(Enum):
     ACTIVE = "ACTIVE"
@@ -40,6 +46,8 @@ class ACPMessage:
     receiver: str
     performative: Performative
     content: Dict[str, Any]
+    sender_type: EntityType = EntityType.AGENT
+    receiver_type: EntityType = EntityType.AGENT
     msg_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     reply_to: Optional[str] = None
     language: str = "en"

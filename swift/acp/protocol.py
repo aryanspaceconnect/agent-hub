@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import uuid
 import json
-from .types import ACPMessage, Performative, Session, SessionState, Role
+from .types import ACPMessage, Performative, Session, SessionState, Role, EntityType
 
 class AgentCollaborationProtocol:
     """
@@ -26,6 +26,7 @@ class AgentCollaborationProtocol:
         """
         The first layer of the immune system.
         Rejects malformed, impossible, or rogue communications.
+        Frictionless Security Injection.
         """
         # Validate essential properties exist
         if not message.sender or not message.receiver:
@@ -38,6 +39,24 @@ class AgentCollaborationProtocol:
         # Ensure the session is active if a conversation_id is mapped to a session
         if message.conversation_id in self.sessions:
             if self.sessions[message.conversation_id].state != SessionState.ACTIVE:
+                return False
+
+        # Frictionless Security: Context Bounding
+        # Prevent catastrophic memory dumps by limiting content size
+        try:
+            content_str = json.dumps(message.content)
+            if len(content_str) > 1000000: # 1MB limit for raw JSON
+                print(f"[SECURITY ALERT] Message from {message.sender} exceeds 1MB limit.")
+                return False
+        except TypeError:
+            print(f"[SECURITY ALERT] Malformed JSON content from {message.sender}")
+            return False
+
+        # Frictionless Security: Machine Sandboxing
+        # If an AGENT is sending a command to a MACHINE, it must be explicitly structured as a REQUEST
+        if message.sender_type == EntityType.AGENT and message.receiver_type == EntityType.MACHINE:
+            if message.performative not in [Performative.REQUEST, Performative.QUERY]:
+                print(f"[SECURITY ALERT] Illegal performative {message.performative.name} to MACHINE from AGENT.")
                 return False
 
         return True
@@ -55,11 +74,11 @@ class AgentCollaborationProtocol:
             self.sessions[message.conversation_id].history.append(message)
 
         self.message_bus.append(message)
-        print(f"[ACP] {message.performative.name} from {message.sender} -> {message.receiver}")
+        print(f"[ACP] {message.performative.name} from {message.sender} ({message.sender_type.name}) -> {message.receiver} ({message.receiver_type.name})")
         return True
 
-    def query_inbox(self, agent_id: str) -> List[ACPMessage]:
-        return [m for m in self.message_bus if m.receiver == agent_id]
+    def query_inbox(self, entity_id: str) -> List[ACPMessage]:
+        return [m for m in self.message_bus if m.receiver == entity_id]
 
     def initiate_3_phase_commit(self, mediator: str, participants: List[str], task_content: Dict[str, Any], conversation_id: str):
         """

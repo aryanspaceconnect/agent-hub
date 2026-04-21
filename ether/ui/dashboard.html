@@ -1,127 +1,270 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Agent Hub - Live Dashboard</title>
+    <title>Agent Hub - Creator's Terminal</title>
     <meta http-equiv="refresh" content="10">
     <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; }
-        h1 { color: #00ff88; margin-bottom: 20px; }
-        
-        .section { background: #111; border-radius: 12px; padding: 20px; margin: 20px 0; }
-        .section h2 { color: #00d4ff; margin-bottom: 15px; font-size: 1.2rem; }
-        
-        .metrics { display: flex; gap: 20px; flex-wrap: wrap; }
-        .metric { background: #222; padding: 15px 25px; border-radius: 8px; text-align: center; }
-        .metric-value { font-size: 2rem; font-weight: bold; color: #00ff88; }
-        .metric-label { color: #666; font-size: 0.9rem; }
-        
-        .pipeline { display: flex; gap: 15px; flex-wrap: wrap; }
-        .pipeline-stage { 
-            background: #222; padding: 15px; border-radius: 8px; min-width: 100px; text-align: center;
-            border: 2px solid #333;
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-main);
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+            height: 100vh;
         }
-        .pipeline-stage.active { border-color: #00ff88; }
-        .pipeline-count { font-size: 1.5rem; font-weight: bold; }
-        
-        .agents { display: flex; gap: 15px; flex-wrap: wrap; }
-        .agent { 
-            background: #222; padding: 15px; border-radius: 8px; min-width: 150px;
-            border-left: 4px solid #666;
+
+        /* Sidebar: The Library & Human Control */
+        .sidebar {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #27272a;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
         }
-        .agent.leader { border-color: #ff6b00; }
-        .agent.executor { border-color: #00d4ff; }
-        .agent.reviewer { border-color: #7b2ff7; }
-        .agent-name { font-weight: bold; }
-        .agent-status { color: #00ff88; font-size: 0.9rem; }
-        .agent-skills { color: #666; font-size: 0.8rem; }
-        
-        .logs { background: #000; padding: 15px; border-radius: 8px; max-height: 200px; overflow: auto; }
-        .log { font-family: monospace; font-size: 0.85rem; color: #888; margin: 5px 0; }
-        .log-time { color: #00d4ff; }
-        
-        .timestamp { color: #444; font-size: 0.8rem; margin-top: 20px; }
+
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px;}
+        .brand span { color: var(--text-main); }
+
+        .sidebar-section h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+        .nav-link:hover { background: #27272a; }
+        .nav-link.active { background: #27272a; border-left: 3px solid var(--accent-blue); }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        /* Stats Bar */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+        }
+        .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+        .stat-value.ok { color: var(--accent-green); }
+        .stat-value.warn { color: var(--accent-red); }
+
+        /* Immune System Monitor */
+        .panel {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            border: 1px solid #27272a;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title { font-weight: 600; }
+        .badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .terminal {
+            background: #000;
+            padding: 16px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.85rem;
+        }
+
+        .log { margin-bottom: 6px; line-height: 1.4;}
+        .log .time { color: var(--text-muted); margin-right: 8px; }
+        .log.info .type { color: var(--accent-blue); }
+        .log.acp .type { color: var(--accent-purple); }
+        .log.alert .type { color: var(--accent-red); }
+
+        /* Agent Control Matrix */
+        .agent-matrix {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .agent-card {
+            background: #27272a;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--text-muted);
+        }
+        .agent-card.active { border-color: var(--accent-green); }
+        .agent-card.suspended { border-color: var(--accent-red); }
+
+        .ac-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .ac-name { font-weight: 600; font-size: 1.1rem; }
+        .ac-role { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;}
+
+        .ac-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .btn {
+            background: transparent; border: 1px solid #3f3f46; color: var(--text-main);
+            padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #3f3f46; }
+        .btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); }
+        .btn.danger { color: var(--accent-red); border-color: var(--accent-red); }
+        .btn.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
     </style>
 </head>
 <body>
-    <h1>🎛️ Agent Hub - Live Dashboard</h1>
-    
-    <div class="section">
-        <h2>📊 Metrics</h2>
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric-value">1</div>
-                <div class="metric-label">Total Tasks</div>
+
+    <div class="sidebar">
+        <div class="brand">HUB <span>OS</span></div>
+
+        <div class="sidebar-section">
+            <h3>Control</h3>
+            <a href="#" class="nav-link active">Creator's Terminal</a>
+            <a href="#" class="nav-link">Network Graph</a>
+            <a href="#" class="nav-link">Machine Sandboxes</a>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>The Great Library</h3>
+            <a href="../../library/INDEX.md" class="nav-link">Library Index</a>
+            <a href="../../library/onboarding/the-meaning-of-life.md" class="nav-link">The Meaning of Life</a>
+            <a href="../../library/research/papers/agent-immune-system.md" class="nav-link">Immune System Science</a>
+            <a href="../../library/core-texts/ARCHITECTURE.md" class="nav-link">Core Architecture</a>
+            <a href="../../library/core-texts/RULES.md" class="nav-link">Network Rules</a>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Active Agents</div>
+                <div class="stat-value ok">4</div>
             </div>
-            <div class="metric">
-                <div class="metric-value">0%</div>
-                <div class="metric-label">Success Rate</div>
+            <div class="stat-card">
+                <div class="stat-label">ACP Messages (24h)</div>
+                <div class="stat-value">1,402</div>
             </div>
-            <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Completed</div>
+            <div class="stat-card">
+                <div class="stat-label">3PC Rollbacks (Healed)</div>
+                <div class="stat-value ok">12</div>
             </div>
-            <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Failed</div>
+            <div class="stat-card">
+                <div class="stat-label">Blocked Malicious</div>
+                <div class="stat-value warn">2</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Immune System Live Feed</div>
+                <div class="badge">ACP ACTIVE</div>
+            </div>
+            <div class="terminal">
+                <div class="log info"><span class="time">10:45:01</span> <span class="type">[SYSTEM]</span> Agent Hub Initialized. Federation Taxonomy applied.</div>
+                <div class="log acp"><span class="time">10:45:03</span> <span class="type">[ACP]</span> REQUEST from HUMAN (human_user_1) -> AGENT (mediator_alpha)</div>
+                <div class="log acp"><span class="time">10:45:04</span> <span class="type">[ACP]</span> REQUEST from AGENT (mediator_alpha) -> AGENT (worker_1)</div>
+                <div class="log acp"><span class="time">10:45:04</span> <span class="type">[ACP]</span> REQUEST from AGENT (mediator_alpha) -> AGENT (worker_2)</div>
+                <div class="log acp"><span class="time">10:45:06</span> <span class="type">[ACP]</span> ACCEPT from AGENT (worker_1) -> AGENT (mediator_alpha)</div>
+                <div class="log acp"><span class="time">10:45:07</span> <span class="type">[ACP]</span> ACCEPT from AGENT (worker_2) -> AGENT (mediator_alpha)</div>
+                <div class="log acp"><span class="time">10:45:07</span> <span class="type">[ACP]</span> COMMIT from AGENT (mediator_alpha) -> AGENT (worker_1)</div>
+                <div class="log acp"><span class="time">10:45:07</span> <span class="type">[ACP]</span> COMMIT from AGENT (mediator_alpha) -> AGENT (worker_2)</div>
+                <div class="log alert"><span class="time">10:48:12</span> <span class="type">[IMMUNE ALERT]</span> Blocked invalid message from rogue_agent_x. Performative missing.</div>
+                <div class="log alert"><span class="time">10:50:22</span> <span class="type">[SECURITY ALERT]</span> Illegal performative COMMIT to MACHINE from AGENT (worker_2). Dropped.</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Agent Control Matrix</div>
+            </div>
+            <div class="agent-matrix">
+
+                <div class="agent-card active">
+                    <div class="ac-header">
+                        <span class="ac-name">Mediator Alpha</span>
+                        <span class="ac-role">Mediator</span>
+                    </div>
+                    <div class="ac-actions">
+                        <button class="btn">View Context</button>
+                        <button class="btn danger">Suspend</button>
+                    </div>
+                </div>
+
+                <div class="agent-card active">
+                    <div class="ac-header">
+                        <span class="ac-name">Worker 1</span>
+                        <span class="ac-role">Participant</span>
+                    </div>
+                    <div class="ac-actions">
+                        <button class="btn">View Context</button>
+                        <button class="btn danger">Suspend</button>
+                    </div>
+                </div>
+
+                <div class="agent-card suspended">
+                    <div class="ac-header">
+                        <span class="ac-name">Worker 2 (Rogue)</span>
+                        <span class="ac-role">Participant</span>
+                    </div>
+                    <div class="ac-actions">
+                        <button class="btn primary">Restore</button>
+                        <button class="btn danger">Purge</button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
-    
-    <div class="section">
-        <h2>🔄 Pipeline</h2>
-        <div class="pipeline">
-            <div class="pipeline-stage active">
-                <div class="pipeline-count">1</div>
-                <div>Queued</div>
-            </div>
-            <div class="pipeline-stage">
-                <div class="pipeline-count">0</div>
-                <div>Executing</div>
-            </div>
-            <div class="pipeline-stage">
-                <div class="pipeline-count">0</div>
-                <div>Reviewing</div>
-            </div>
-            <div class="pipeline-stage">
-                <div class="pipeline-count">0</div>
-                <div>Completed</div>
-            </div>
-            <div class="pipeline-stage">
-                <div class="pipeline-count">0</div>
-                <div>Failed</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="section">
-        <h2>🤖 Agents</h2>
-        <div class="agents">
-            <div class="agent leader">
-                <div class="agent-name">👑 Leader</div>
-                <div class="agent-status">● Active</div>
-                <div class="agent-skills">Planning, Delegating, Deciding</div>
-            </div>
-            <div class="agent executor">
-                <div class="agent-name">⚡ Executor</div>
-                <div class="agent-status">○ Idle</div>
-                <div class="agent-skills">Coding, Building, Executing</div>
-            </div>
-            <div class="agent reviewer">
-                <div class="agent-name">🔍 Reviewer</div>
-                <div class="agent-status">○ Idle</div>
-                <div class="agent-skills">Validation, Quality, Testing</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="section">
-        <h2>📜 Recent Logs</h2>
-        <div class="logs">
-            <div class="log"><span class="log-time">10:57:23</span> Leader assigned task 1 to executor</div>
-        </div>
-    </div>
-    
-    <div class="timestamp">Auto-refreshes every 10 seconds • Port 8501</div>
 </body>
 </html>
